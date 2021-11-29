@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Document</title>
+    <!-- css
+    <style>
+        #color {
+            margin: auto;
+            width: 500px;
+            height: 50px;
+            background-color: hsla(0, 0%, 93%, 0.479);
+            display: flex;
+        }
+        input[type = range] {
+            margin: 10px auto;
+            display: flex;
+            justify-content: center;
+        }
+        #canvas {
+            display: flex;
+            margin: auto;
+            background-color: honeydew;
+        }
+    -->
+    </style>
+</head>
+<body>
+
+    <!--
+        색 조절기
+    <div id="color">
+        <input type="range" id="red" min="0" max="255"><input type="checkbox">
+        <input type="range" id="green" min="0" max="255"><input type="checkbox">
+        <input type="range" id="blue" min="0" max="255"><input type="checkbox">
+    </div>
+    -->
+
+    <canvas id="canvas" width="500px" height="700px"></canvas>
+    <script>
+        let canvas = document.getElementById("canvas");
+        let ctx = canvas.getContext("2d");
+        //다각형 함수 생성 반복
+        for (let i = 0; i < 20; i++){
+            randomDraw (randomN(0,255), randomN(0,255), randomN(0,255));
+        }
+
+        //범위 내 무작위 상수 생성
+        function randomN(from, to) {
+            let intermediateValue = to - from;
+            let randomNumber = Math.floor(Math.random() * intermediateValue ) + from;
+            return randomNumber;
+        }
+
+        //다각형 그리는 함수
+        function randomDraw (red, green, blue) {
+            ctx.beginPath();
+            ctx.moveTo(randomN(0, canvas.width), randomN(0, canvas.height));   
+            // 꼭짓점 개수 만큼 선긋기         
+            for (let i = 0; i < randomN(3, 10); i++) {
+                ctx.lineTo(randomN(0, canvas.width), randomN(0, canvas.height));
+            }
+            ctx.closePath();
+            //렌더링
+            ctx.fillStyle = `rgb(${red}, ${green}, ${blue})`;
+            ctx.fill();
+        }
+    </script>
+</body>
+</html>
