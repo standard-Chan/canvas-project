@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Document</title>
+    <style>
+        #canvas {
+            background-color: rgb(137, 173, 228);
+        }
+        #score {
+            background-color: bisque;
+            width: 570px;
+            height: 500px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div id="score">
+    <canvas id = "canvas" width="490px" height="500px"></canvas>
+    </div>
+    <script>
+        let canvas = document.getElementById("canvas");
+        let ctx = canvas.getContext("2d");
+
+
+
+    //객체 및 배열----------------------------------------------------------
+        //공
+        let ball = {x: 240, y: 400, r: 10, speed_x: 6, speed_y: 6};
+        //블록 
+        let block = {width: 70, height: 30}
+        let blockRow = 7                            //가로 블록 개수
+        let blockColumn = 4;                        //세로 블록 개수
+        let blockTotal = 28;                        //블록 총 개수
+
+        let blockArray_x = [];
+        let blockArray_y = [];
+
+        blockArray ()
+        //블록 생성 함수
+        function blockArray () {
+            let i = 0;
+            for (let c = 0; c < 4; c++){
+                for (let r = 0; r < 7; r++){
+                    blockArray_x[i] = r*70 + 35;            // 중심의 x좌표 - 0:35, 1:105, 2:175, n:35+(n*70)
+                    blockArray_y[i] = c*30 + 15;            // 중심의 y좌표 - 0: 15, 1:45, 2:75, n:15+(n*30)
+                    i ++;
+                }
+            }
+        }
+
+        let block1 = {x: 100, y: 50};
+        let block2 = {x: 200, y: 50};
+        let block3 = {x: 300, y: 50};
+
+        //막대 바
+        let bar = {x: 245, y: 450, speed: 5, width: 170, height: 10};
+        
+
+    //그리기----------------------------------------------------------
+        requestAnimationFrame(draw);
+        function draw () {
+            ctx.clearRect(0,0,490,500);
+            requestAnimationFrame(draw);
+            blockDraw ();
+            ballDraw ();
+            barDraw();
+        }
+
+    //블록 draw
+        function blockDraw () {
+            ctx.fillStyle = "#e0ecff";
+            for (let i = 0; i < blockTotal; i++){
+                ctx.fillRect(blockArray_x[i]-35, blockArray_y[i]-15, 70,30);   
+                ctx.strokeRect(blockArray_x[i]-35, blockArray_y[i]-15, 70,30);    
+            }
+
+        }
+        
+    // 막대바
+        //바 draw
+        function barDraw() {
+            ctx.fillStyle = "black"
+            ctx.fillRect(bar.x-85, bar.y-5, bar.width, bar.height);
+            
+        }
+
+        //키 다운
+        window.addEventListener ("keydown", (event) => {
+            if (event.keyCode == 65) {                              //a 누를 시
+                barMove(-20);
+            }
+            else if (event.keyCode == 68) {                         //b 누를 시
+                barMove(20);
+            }
+        });
+
+        //바 이동
+        function barMove(move) {
+            bar.x += move;
+        }
+
+    //공 그리기 및 특성
+        function ballDraw () {
+            //공 그리기
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, ball.r, 0, 2*Math.PI);
+            ctx.closePath();
+            ctx.fillStyle = "orange";
+            ctx.strokeStyle = "#ff3a20";
+            ctx.stroke();
+            ctx.fill();
+
+            //이동
+            ball.x += ball.speed_x;
+            ball.y += ball.speed_y;
+
+            //벽 충돌
+            if (ball.x + ball.r >= canvas.width || ball.x - ball.r <= 0) {
+                ball.speed_x *= (-1);
+            }
+            if (ball.y + ball.r >= canvas.height || ball.y - ball.r <= 0) {
+                ball.speed_y *= (-1);
+            }
+
+            //블록 충돌
+
+            for (let i=0; i<blockTotal; i++){
+                if ((blockArray_x[i]-35 <= ball.x+ball.r && ball.x-ball.r <= blockArray_x[i]+35) && (blockArray_y[i]-15 <= ball.y+ball.r && ball.y-ball.r <= blockArray_y[i]+15)) {
+                    if (blockArray_y[i]-15 <= ball.y && ball.y <= blockArray_y[i]+15) {
+                        ball.speed_x *= (-1);
+                        blockArray_x[i] = 1000; //화면 밖으로 이동
+                    }
+                    else if  (blockArray_x[i]-35 <= ball.x && ball.x <= blockArray_x[i]+35) {
+                        ball.speed_y *= (-1);
+                        blockArray_x[i] = 1000; //화면 밖으로 이동
+                    }
+                }
+            }
+
+            //바 충돌
+            if ((ball.x-ball.r <= bar.x+85) && (ball.x+ball.r >= bar.x-85)&&(ball.y+ball.r == bar.y-bar.height)) {
+                ball.speed_y *= (-1);
+            }
+        }
+        
+    </script>
+</body>
+</html>
