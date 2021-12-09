@@ -3,68 +3,317 @@
 <head>
     <meta charset="UTF-8">
     <title>Document</title>
-    <!-- css
     <style>
-        #color {
-            margin: auto;
-            width: 500px;
-            height: 50px;
-            background-color: hsla(0, 0%, 93%, 0.479);
-            display: flex;
-        }
-        input[type = range] {
-            margin: 10px auto;
-            display: flex;
-            justify-content: center;
-        }
         #canvas {
-            display: flex;
-            margin: auto;
-            background-color: honeydew;
+            background-color: rgb(137, 173, 228);
         }
-    -->
+        #side {
+            background-color: bisque;
+            width: 570px;
+            height: 500px;
+            display: inline-block;
+            position: relative;
+        }
+        #text {
+            color: black;
+            font-size: 30px;
+            font-weight: bolder;
+            padding-left: 15px;
+            padding-bottom: 100px;
+            writing-mode: vertical-rl;
+            text-orientation: upright;
+        }
+        #scoreText {
+            color: black;
+            font: 20px bolder;
+            display: inline;
+            position: absolute;
+            top: 10px;
+            right: 20px;
+        }
     </style>
 </head>
 <body>
-
-    <!--
-        색 조절기
-    <div id="color">
-        <input type="range" id="red" min="0" max="255"><input type="checkbox">
-        <input type="range" id="green" min="0" max="255"><input type="checkbox">
-        <input type="range" id="blue" min="0" max="255"><input type="checkbox">
+    <div id="side">
+        <canvas id = "canvas" width="490px" height="500px"></canvas>
+        <span id="text"></span>
+        <span id="scoreText"></span>
     </div>
-    -->
-
-    <canvas id="canvas" width="500px" height="700px"></canvas>
     <script>
         let canvas = document.getElementById("canvas");
         let ctx = canvas.getContext("2d");
-        //다각형 함수 생성 반복
-        for (let i = 0; i < 20; i++){
-            randomDraw (randomN(0,255), randomN(0,255), randomN(0,255));
+
+        let text = document.getElementById("text");
+        let scoreText = document.getElementById("scoreText")
+        function gameStart () {
+            requestAnimationFrame(draw);
+            blockArray ()
         }
 
-        //범위 내 무작위 상수 생성
-        function randomN(from, to) {
-            let intermediateValue = to - from;
-            let randomNumber = Math.floor(Math.random() * intermediateValue ) + from;
-            return randomNumber;
-        }
 
-        //다각형 그리는 함수
-        function randomDraw (red, green, blue) {
-            ctx.beginPath();
-            ctx.moveTo(randomN(0, canvas.width), randomN(0, canvas.height));   
-            // 꼭짓점 개수 만큼 선긋기         
-            for (let i = 0; i < randomN(3, 10); i++) {
-                ctx.lineTo(randomN(0, canvas.width), randomN(0, canvas.height));
+    //객체 및 배열-
+        //공
+        let ball = {x: 240, y: 400, r: 10, speed_x: 6, speed_y: 6, start: 0};   //start = 1일 시 시작, 0일시 정지
+        //블록 
+        let block = {width: 70, height: 30}
+        let blockRow = 7                            //가로 블록 개수
+        let blockColumn = 4;                        //세로 블록 개수
+        let blockTotal = 28;                        //블록 총 개수
+
+        let blockArray_x = [];
+        let blockArray_y = [];
+        //블록 생성 함수
+        function blockArray () {
+            let i = 0;
+            for (let c = 0; c < 4; c++){
+                for (let r = 0; r < 7; r++){
+                    blockArray_x[i] = r*70 + 35;            // 중심의 x좌표 - 0:35, 1:105, 2:175, n:35+(n*70)
+                    blockArray_y[i] = c*30 + 15;            // 중심의 y좌표 - 0: 15, 1:45, 2:75, n:15+(n*30)
+                    i ++;
+                }
             }
+        }
+
+        let block1 = {x: 100, y: 50};
+        let block2 = {x: 200, y: 50};
+        let block3 = {x: 300, y: 50};
+
+        //막대 바
+        let bar = {x: 245, y: 450, speed: 5, width: 170, height: 10};
+        let temp = {right: 0, left: 0};                                 // 바 이동 시 requsetAnimationFrame 1회만 작동
+        
+        //목숨
+        let life = {count: 3};
+
+        //점수
+        let score = {value: 0};
+
+    //그리기 -
+        function draw () {
+            if (life.count == 0) {                              //게임 종료 시
+                ctx.clearRect(0,0,490,500);
+                ctx.font = "50px verdana";
+                ctx.fillText("GAME OVER", 100,200);
+                text.textContent = " "
+            }
+            else {
+                ctx.clearRect(0,0,490,500);
+                requestAnimationFrame(draw);
+                blockDraw ();
+                ballDraw ();
+                barDraw();
+                lifeDraw();
+                startText();
+                scoreValue();
+            }
+        }
+
+        //블록 draw
+        function blockDraw () {
+            ctx.fillStyle = "#e0ecff";
+            for (let i = 0; i < blockTotal; i++){
+                ctx.fillRect(blockArray_x[i]-35, blockArray_y[i]-15, 70,30);   
+                ctx.strokeRect(blockArray_x[i]-35, blockArray_y[i]-15, 70,30);    
+            }
+
+        }
+        
+        //바 draw
+        function barDraw() {
+            ctx.fillStyle = "black"
+            ctx.fillRect(bar.x-85, bar.y-5, bar.width, bar.height);
+            
+        }
+
+        //공 그리기 및 특성
+        function ballDraw () {
+            //공 그리기
+            ctx.beginPath();
+            ctx.fillStyle = "orange";
+            ctx.strokeStyle = "#ff3a20";
+            ctx.arc(ball.x, ball.y, ball.r, 0, 2*Math.PI);
             ctx.closePath();
-            //렌더링
-            ctx.fillStyle = `rgb(${red}, ${green}, ${blue})`;
+            ctx.stroke();
+            ctx.fill();
+
+            //이동
+            if (ball.start == 1) {
+                ballMove();
+            }
+
+            //충돌
+            wallCrash ();
+            blockCrash ();
+            barCrash ();
+            
+            //공이 아웃될 경우
+            if (ball.y - ball.r > canvas.height) {
+                ball.x = 245;
+                ball.y = 400;
+                ball.start = 0;
+                life.count -= 1;
+            }
+            
+        }
+
+    // 이동 -
+        // 키 다운
+        window.addEventListener ("keydown", (event) => {             //requestAnimationFrame 때문에 temp값을 이용하여 ON/OFF (0=OFF, 1=animation반복작동)
+            if (event.keyCode == 65) {                              //a 누를 시
+                if (temp.left == 0) {                                   //키 누를 시 1회만 animation작동하게끔. 없애면 계속해서 animation이 작동이 되어 가속도가 붙는다.
+                    temp.left = 1;                    
+                    barMove_left ();
+                }
+            }
+            else if (event.keyCode == 68) { 
+                if (temp.right == 0) {                        //b 누를 시
+                    temp.right = 1;
+                    barMove_right ();
+                }
+            }
+        });
+        //키 업
+        window.addEventListener ("keyup", (evnet) => {
+            if (event.keyCode == 65) {
+                temp.left = 0;
+            }
+            else if (evnet.keyCode == 68) {
+                temp.right = 0;
+            }
+        });
+
+        //바 이동
+        function barMove_left() {
+            if (bar.x == 85) {
+                temp.left = 0;
+            }
+            if (temp.left == 1) {                                    
+            bar.x -= 5;
+            requestAnimationFrame(barMove_left);
+            }
+        }
+        function barMove_right() {
+            if (bar.x == 405) {
+                temp.right = 0;
+            }
+            if (temp.right == 1) {
+            bar.x += 5;
+            requestAnimationFrame(barMove_right);
+            }
+        }
+
+        //공 이동
+        function ballMove () {
+            ball.x += ball.speed_x;
+            ball.y += ball.speed_y;
+        }
+
+    // 충돌 -
+
+        //벽 충돌
+        function wallCrash () {
+            if (ball.x + ball.r >= canvas.width || ball.x - ball.r <= 0) {
+                ball.speed_x *= (-1);
+            }
+            if (ball.y - ball.r <= 0) {
+                ball.speed_y *= (-1);
+            }
+        }
+        //바 충돌
+        function barCrash() {
+            if ((ball.x-ball.r <= bar.x+85)&&(ball.x+ball.r >= bar.x-85)&&(ball.y+ball.r >= bar.y-bar.height)&&(ball.y+ball.r <= bar.y+bar.height)) {
+                ball.speed_y *= (-1);
+                ball.speed_y -= 0.2;
+                if (ball.speed_x > 0) {
+                    ball.speed_x += 0.1;    }
+                else {
+                    ball.speed_x += 0.1;    }              
+            }
+        }
+        //블록 충돌
+        function blockCrash() {
+            for (let i=0; i<blockTotal; i++){
+                if ((blockArray_x[i]-35 <= ball.x+ball.r && ball.x-ball.r <= blockArray_x[i]+35) && (blockArray_y[i]-15 <= ball.y+ball.r && ball.y-ball.r <= blockArray_y[i]+15)) {
+                    if (blockArray_y[i]-15 <= ball.y && ball.y <= blockArray_y[i]+15) {
+                        ball.speed_x *= (-1);
+                        score.value += Math.ceil(ball.speed_x + ball.speed_y) * 100
+                        blockArray_x[i] = 1000; //화면 밖으로 이동
+                        ctx.fillStyle="yellow"
+                        ctx.fillRect(blockArray_x[i]-35,blockArray_y[i]-15,70,30);
+                        ctx.fill();
+                    }
+                    else if  (blockArray_x[i]-35 <= ball.x && ball.x <= blockArray_x[i]+35) {
+                        ball.speed_y *= (-1);
+                        score.value += Math.ceil(ball.speed_x + ball.speed_y) * 100
+                        blockArray_x[i] = 1000; //화면 밖으로 이동
+                        ctx.fillStyle="yellow"
+                        ctx.fillRect(blockArray_x[i]-35,blockArray_y[i]-15,70,30);
+                        ctx.fill();
+                    }
+                }
+            }
+        }
+
+    // 시작 - ball.start : 1=정지, 2=시작
+        //키 누르면 시작
+        window.addEventListener ("keydown", (event) => {
+            if (life.count != 0 && event.keyCode != 65 && event.keyCode != 68) {
+                ball.speed_x = 6;
+                ball.speed_y = 6;
+                ball.start = 1;
+            }
+            
+        })
+        // 시작 텍스트 생성 및 제거
+        function startText () {
+            if (ball.start == 0) { 
+                text.innerText = "키를 누르면 시작합니다"
+            }
+            else if (ball.start == 1){
+                text.innerText = ""
+            }
+        }
+        // 게임 오버 후 재시작
+        window.addEventListener("keydown", (event) => {
+            if (life.count == 0 && event.keyCode == 82) {
+                life.count = 3;
+                gameStart();
+                score.value = 0;
+            }
+        }) 
+    // 목숨
+        // 하트 그리는 함수 (left = 왼쪽끝 x좌표)
+        function heart (left) {
+            ctx.beginPath();
+            ctx.arc(left,480,2,Math.PI,false);
+            ctx.arc(left + 5,480,2,Math.PI,false);
+            ctx.moveTo(left + 7,480);
+            ctx.lineTo(left + 2.5,485);
+            ctx.lineTo(left - 2,480);
+            ctx.closePath();
+            ctx.fillStyle="red";
+            ctx.stroke();
             ctx.fill();
         }
+        // 죽을때마다 하트 제거        (if 최적화 방법이 있을 듯)
+        function lifeDraw () {       
+            if (life.count > 2) {
+                heart (480);
+            }
+            if (life.count > 1) {
+                heart (468);
+            }
+            if (life.count > 0) {
+                heart (456);        
+            }
+        }
+    //기타
+        //점수
+        function scoreValue() {
+            scoreText.textContent = `${score.value}`
+        }
+
+        gameStart();
     </script>
 </body>
 </html>
